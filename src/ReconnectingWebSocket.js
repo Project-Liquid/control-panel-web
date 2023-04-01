@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 
 export class ReconnectingWebSocket {
   constructor(url) {
@@ -30,7 +30,7 @@ export class ReconnectingWebSocket {
   }
   closePermanently() {
     // Remove the reconnect timeout
-    this.ws.onclose = () => {};
+    this.ws.onclose = () => { };
     this.ws.close();
     this.onclose();
     console.log(`Permanently closed ${this.id}`)
@@ -47,19 +47,19 @@ export class ReconnectingWebSocket {
 export function useWS(url, handler) {
   const [ws, setWs] = useState(null);
   const [wsIsOpen, setWsIsOpen] = useState(false);
-  
+
   useEffect(() => {
     console.log("Subscribing websocket...");
     let newWs = new ReconnectingWebSocket(url);
-    newWs.onmessage = (ev) => ev.data? handler(ev.data) : null;
+    newWs.onmessage = (ev) => ev.data ? handler(ev.data) : null;
     //newWs.onmessage = ev => {
     //  return ev.data? handler(ev.data) : null;
     //}
     newWs.onopen = () => setWsIsOpen(true);
     newWs.onclose = () => setWsIsOpen(false);
     setWs(newWs);
-    return () => newWs.closePermanently();
+    return () => newWs.closePermanently(); // Cleanup function
   }, [url, handler]);
-  
+
   return [ws, wsIsOpen]
 }

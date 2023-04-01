@@ -1,39 +1,90 @@
-import {useEffect, useState} from "react";
-import {useWS} from "./ReconnectingWebSocket"
-import {useProcessor} from "./MessageProcessor"
+import { useState } from "react";
+import { useWS } from "./ReconnectingWebSocket"
+import { useProcessor } from "./MessageProcessor"
 import './App.css';
+import ValveTable from "./ValveTable";
 
 // TODO:
 // - Implement a model-update opaque interface
 // - Async function for sending and waiting for a specific response 
 
-function SubmitField({buttonText="Submit", submit=(_) => {}, children}) {
+const pinNames = [
+  "N2O Pressurant Line",
+  "IPA Pressurant Line",
+  "N2O Run Valve",
+  "IPA Run Valve",
+  "N2O Vent Valve",
+  "IPA Vent Valve",
+  "Pneumatics Air Supply",
+  "Pneumatics Line Vent Valve",
+  "Purge Valve",
+]
+
+const pinNormallyOpen = [
+  false,
+  false,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  false,
+]
+
+const sensorNames = [
+  "Sensata 1", "Sensata 2", "Sensata 3", "Sensata 4", "Sensata 5"
+]
+
+function SubmitField({ buttonText = "Submit", submit = (_) => { }, children }) {
   let [textValue, setTextValue] = useState("");
   return (
     <form onSubmit={ev => ev.preventDefault()}>
       <p>{children}</p>
       <input onChange={(e) => setTextValue(e.target.value)} value={textValue}></input>
-      <input type="submit" onClick={() => {submit(textValue); setTextValue("");}} value={buttonText}></input>
+      <input type="submit" onClick={() => { submit(textValue); setTextValue(""); }} value={buttonText}></input>
     </form>
   );
 }
 
-function PinController({pin=7, ws, children}) {
-  const [pinValue, setPinValue] = useState()
-  const pinStr = pin.toString().padStart(2, 0);
-  return (
-    <form onSubmit={ev => ev.preventDefault()}>
-      <label>{children || `Set pin ${pinStr}: `}</label>
-      <input type="submit" onClick={() => { ws.send(`PDW${pinStr}0`) }} value="LOW"></input>
-      <input type="submit" onClick={() => { ws.send(`PDW${pinStr}1`) }} value="HIGH"></input>
-      <label></label>
-    </form>
-  );
+// 0,0,0,0,0,0,0,0,0,15,0,15,0,18,0,14,0,14,0 
+function useCSVLog() {
+  const [log, setLog] = useState({
+    // pinStates:
+    // * 0: off
+    // * 1: on
+    // * 2: off, waiting to turn on
+    // * 3: on, waiting to turn off
+    pinStates: [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+    sensorData: [{ p: 0, t: 0 }, { p: 0, t: 0 }, { p: 0, t: 0 }, { p: 0, t: 0 }, { p: 0, t: 0 }]
+  });
+  function fromLogString(logString) {
+    let newLog = JSON.parse(JSON.stringify(log));
+    let list = logString.split(",");
+    list.forEach((element, idx) => {
+      if (idx < 9) {
+        newLog.pinStates[idx] = parseInt(element);
+      } else {
+        if ((idx - 9) % 2 === 0) {
+          newLog.sensorData[(idx - 9) / 2].t = parseInt(element);
+        } else {
+          newLog.sensorData[(idx - 10) / 2].p = parseInt(element);
+        }
+      }
+    });
+    setLog(newLog);
+  }
+  function setPin(pin, value) {
+    let newLog = JSON.parse(JSON.stringify(log));
+    newLog.pinStates[pin] = value;
+    setLog(newLog);
+  }
+  return [log, fromLogString, setPin];
 }
 
 function App() {
   const WS_URL = "ws://localhost:8000";
-  const [log, setLog] = useState("");
+  const [log, setLog, setPin] = useCSVLog();
   const [err, setErr] = useState("");
   const [fallback, setFallback] = useState("")
   const processor = useProcessor({
@@ -41,26 +92,45 @@ function App() {
     ERR: setErr,
   }, setFallback);
   //let [mostRecentMessage, setMostRecentMessage] = useState(null);
-  
+
   // Subscribe to websocket connection
   const [ws, wsIsOpen] = useWS(WS_URL, processor);
-    
+
   return (
     <div className="App">
-      <header className='App-header'><h1>E&C Control Panel</h1></header>
-      <main>
-        <p>WebSocket is {wsIsOpen? "open :)" : "closed :("}</p>
-        <SubmitField submit={ws? (data) => ws.send(data) : (_) => {}} buttonText="Send">Send raw command</SubmitField>
-        <p>LOG: {log}</p>
-        <p>ERR: {err}</p>
-        <p>Unclassifiable message: {fallback}</p>
+      <header className='App__header'><h1>E&C Control Panel</h1><p>Server status: <span style={{ color: wsIsOpen ? "yellowgreen" : "red" }}>{wsIsOpen ? "CONNECTED" : "DISCONNECTED"}</span></p></header>
+      <main className="App__main">
+        <ValveTable ws={ws} wsIsOpen={wsIsOpen} log={log} setPin={setPin} pinNames={pinNames}></ValveTable>
+        <hr></hr>
+        <div style={{ display: "inline-flex" }}>
+          {log.sensorData.map((el, idx) =>
+            <span key={idx} style={{ marginRight: "2em" }}>
+              <p>{sensorNames[idx]}</p>
+              <h3>{el.p} psi</h3>
+              <p>{el.t} °C</p>
+            </span>
+            //<div key={idx}>
+
+            //  <span style={{ marginRight: "2em" }}>Pres: {el.p}</span>
+            //  <span>Temp: {el.t}</span>
+            //</div>
+          )}
+        </div>
+        <hr></hr>
+        <div style={{ display: "flex" }}>
+          <SubmitField submit={ws ? (data) => ws.send(data) : (_) => { }} buttonText="Send">Send raw command</SubmitField>
+          <div style={{ paddingLeft: "5em" }}>
+            <strong>ERR:</strong>
+            <p>{err || "(none)"}</p>
+            <strong>Unclassifiable message:</strong>
+            <p>{fallback || "(none)"}</p>
+          </div>
+        </div>
+
         {/*<div><span style={{ display: "inline-block", width: "100px", transform: `scaleX(${parseInt(log) / 100})`, height: "20px", backgroundColor: `rgb(${log}, 0, 0)`, transition: "transform ease-in-out 1s" }}></span></div>*/}
-        <hr></hr>
-        <button onClick={() => ws.send("POK")}>Poke server (rude)</button>
+        {/*<button onClick={() => ws.send("POK")}>Poke server (rude)</button>
         <span> -- </span>
-        <button onClick={() => ws.send("EXT")}>Remote server shutdown (extremely rude)</button>
-        <hr></hr>
-        <PinController pin={13} ws={ws}></PinController>
+        <button onClick={() => ws.send("EXT")}>Remote server shutdown (extremely rude)</button>*/}
       </main>
     </div>
   );
