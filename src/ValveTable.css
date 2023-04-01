@@ -1,0 +1,24 @@
+.ValveTable {
+    width: 90vw;
+    max-width: 35em;
+}
+
+.ValveTable>thead {
+    font-weight: bold;
+    height: 2.5em;
+}
+
+.ValveTable td {
+    width: 6em;
+    text-align: center;
+}
+
+.ValveTable td:first-child {
+    width: auto;
+    padding-right: 1em;
+    text-align: left;
+}
+
+.ValveTable td button {
+    margin: auto;
+}

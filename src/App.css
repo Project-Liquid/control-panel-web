@@ -23,6 +23,13 @@
   padding: 0 2em 0 2em;
 }
 
+.App__sensors {
+  width: 90vw;
+  max-width: 35em;
+  display: flex;
+  justify-content: space-between;
+}
+
 .App__link {
   color: #61dafb;
 }

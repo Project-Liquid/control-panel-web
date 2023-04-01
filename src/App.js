@@ -100,24 +100,19 @@ function App() {
     <div className="App">
       <header className='App__header'><h1>E&C Control Panel</h1><p>Server status: <span style={{ color: wsIsOpen ? "yellowgreen" : "red" }}>{wsIsOpen ? "CONNECTED" : "DISCONNECTED"}</span></p></header>
       <main className="App__main">
-        <ValveTable ws={ws} wsIsOpen={wsIsOpen} log={log} setPin={setPin} pinNames={pinNames}></ValveTable>
+        <ValveTable ws={ws} wsIsOpen={wsIsOpen} log={log} setPin={setPin} pinNames={pinNames} pinNormallyOpen={pinNormallyOpen}></ValveTable>
         <hr></hr>
-        <div style={{ display: "inline-flex" }}>
+        <div className={"App__sensors"}>
           {log.sensorData.map((el, idx) =>
-            <span key={idx} style={{ marginRight: "2em" }}>
+            <span key={idx}>
               <p>{sensorNames[idx]}</p>
-              <h3>{el.p} psi</h3>
+              <h3 style={{ color: `rgb(${el.p * 255 / 60}, 0, ${255 - el.p * 255 / 60})` }}>{el.p} psi</h3>
               <p>{el.t} °C</p>
             </span>
-            //<div key={idx}>
-
-            //  <span style={{ marginRight: "2em" }}>Pres: {el.p}</span>
-            //  <span>Temp: {el.t}</span>
-            //</div>
           )}
         </div>
         <hr></hr>
-        <div style={{ display: "flex" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", maxWidth: "35em", width: "90vw" }}>
           <SubmitField submit={ws ? (data) => ws.send(data) : (_) => { }} buttonText="Send">Send raw command</SubmitField>
           <div style={{ paddingLeft: "5em" }}>
             <strong>ERR:</strong>
@@ -126,11 +121,6 @@ function App() {
             <p>{fallback || "(none)"}</p>
           </div>
         </div>
-
-        {/*<div><span style={{ display: "inline-block", width: "100px", transform: `scaleX(${parseInt(log) / 100})`, height: "20px", backgroundColor: `rgb(${log}, 0, 0)`, transition: "transform ease-in-out 1s" }}></span></div>*/}
-        {/*<button onClick={() => ws.send("POK")}>Poke server (rude)</button>
-        <span> -- </span>
-        <button onClick={() => ws.send("EXT")}>Remote server shutdown (extremely rude)</button>*/}
       </main>
     </div>
   );
