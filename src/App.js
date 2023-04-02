@@ -47,9 +47,32 @@ function SubmitField({ buttonText = "Submit", submit = (_) => { }, children }) {
   );
 }
 
+function CSVLogReducer(oldLog, action) {
+  let newLog = JSON.parse(JSON.stringify(oldLog));
+
+  if (action.type === "fromLogString") {
+    let list = action.logString.split(",").slice(1);
+    list.forEach((element, idx) => {
+      if (idx < 9) {
+        newLog.pinStates[idx] = parseInt(element);
+      } else {
+        if ((idx - 9) % 2 === 0) {
+          newLog.sensorData[(idx - 9) / 2].t = parseInt(element);
+        } else {
+          newLog.sensorData[(idx - 10) / 2].p = parseInt(element);
+        }
+      }
+    });
+  } else if (action.type === "setPin") {
+    newLog.pinStates[action.pin] = action.value;
+  }
+
+  return newLog;
+}
+
 // 0,0,0,0,0,0,0,0,0,15,0,15,0,18,0,14,0,14,0 
 // TODO: make this a useReducer ASAP!!!
-function useCSVLog() {
+function useCSVLog1() {
   const [log, setLog] = useState({
     // pinStates:
     // * 0: off
@@ -79,6 +102,29 @@ function useCSVLog() {
     let newLog = JSON.parse(JSON.stringify(log));
     newLog.pinStates[pin] = value;
     setLog(newLog);
+  }
+  return [log, fromLogString, setPin];
+}
+
+function useCSVLog() {
+  const [log, dispatch] = useReducer(CSVLogReducer, {
+    // pinStates:
+    // * 0: off
+    // * 1: on
+    // * 2: off, waiting to turn on
+    // * 3: on, waiting to turn off
+    pinStates: [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+    sensorData: [{ p: 0, t: 0 }, { p: 0, t: 0 }, { p: 0, t: 0 }, { p: 0, t: 0 }, { p: 0, t: 0 }]
+  })
+  const setPin = (pin, value) => {
+    dispatch({
+      type: "setPin", pin: pin, value: value
+    })
+  };
+  const fromLogString = (logString) => {
+    dispatch({
+      type: "fromLogString", logString: logString
+    })
   }
   return [log, fromLogString, setPin];
 }
