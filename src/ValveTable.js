@@ -30,7 +30,7 @@ export default function ValveTable({ ws, wsIsOpen, log, setPin, pinNames, pinNor
             </tr></thead>
             <tbody>
                 <tr>
-                    <td>Vent all except N2 Tank</td>
+                    <td>Vent all except N2 tank</td>
                     <td><button className="PinController__btn" onClick={() => {
                         // Ensure N2 air supply closed
                         ws.send("PDW 1 7");
@@ -39,7 +39,7 @@ export default function ValveTable({ ws, wsIsOpen, log, setPin, pinNames, pinNor
                     }}>VENT</button></td>
                 </tr>
                 <tr>
-                    <td>Close Outlets</td>
+                    <td>Close outlets</td>
                     <td><button className="PinController__btn" onClick={() => {
                         ws.send("PDW 1 3 4 5 6 8");
                     }}>CLOSE</button></td>

@@ -30,6 +30,14 @@
   justify-content: space-between;
 }
 
+.App__sensors__sensor {
+  padding: 0 1em 0 1em;
+}
+
+.App__sensors__sensor--active {
+  background-color: #ff7a7a;
+}
+
 hr {
   width: 100vw;
 }

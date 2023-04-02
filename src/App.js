@@ -48,6 +48,7 @@ function SubmitField({ buttonText = "Submit", submit = (_) => { }, children }) {
 }
 
 // 0,0,0,0,0,0,0,0,0,15,0,15,0,18,0,14,0,14,0 
+// TODO: make this a useReducer ASAP!!!
 function useCSVLog() {
   const [log, setLog] = useState({
     // pinStates:
@@ -133,7 +134,7 @@ function App() {
         <hr></hr>
         <div className={"App__sensors"}>
           {log.sensorData.map((el, idx) =>
-            <span key={idx}>
+            <span key={idx} className={"App__sensors__sensor" + ((el.t >= 0) ? "" : " App__sensors__sensor--active")}>
               <p>{sensorNames[idx]}</p>
               <h3 style={{ color: `rgb(${el.p * 255 / 60}, 0, ${255 - el.p * 255 / 60})` }}>{el.p} psi</h3>
               <p>{el.t} °C</p>

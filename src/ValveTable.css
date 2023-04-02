@@ -23,7 +23,8 @@
     text-align: center;
 }
 
-.ValveTable__table td:first-child {
+.ValveTable__table td:first-child,
+.ValveTable__table th:first-child {
     width: auto;
     padding-right: 1em;
     text-align: left;
