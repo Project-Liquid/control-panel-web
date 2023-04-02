@@ -1,24 +1,34 @@
 .ValveTable {
     width: 90vw;
-    max-width: 35em;
+    max-width: 60em;
+    display: flex;
+    align-items: baseline;
 }
 
-.ValveTable>thead {
+.ValveTable__table {
+    margin-left: 5em;
+}
+
+.ValveTable__table:first-child {
+    margin-left: 0;
+}
+
+.ValveTable__table>thead {
     font-weight: bold;
     height: 2.5em;
 }
 
-.ValveTable td {
+.ValveTable__table td {
     width: 6em;
     text-align: center;
 }
 
-.ValveTable td:first-child {
+.ValveTable__table td:first-child {
     width: auto;
     padding-right: 1em;
     text-align: left;
 }
 
-.ValveTable td button {
+.ValveTable__table td button {
     margin: auto;
 }

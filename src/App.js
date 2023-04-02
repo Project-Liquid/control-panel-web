@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useReducer } from "react";
 import { useWS } from "./ReconnectingWebSocket"
 import { useProcessor } from "./MessageProcessor"
 import './App.css';
@@ -9,15 +9,15 @@ import ValveTable from "./ValveTable";
 // - Async function for sending and waiting for a specific response 
 
 const pinNames = [
-  "N2O Pressurant Line",
-  "IPA Pressurant Line",
-  "N2O Run Valve",
-  "IPA Run Valve",
-  "N2O Vent Valve",
-  "IPA Vent Valve",
-  "Pneumatics Air Supply",
-  "Pneumatics Line Vent Valve",
-  "Purge Valve",
+  "1: N2O Pressurant Line",
+  "2: IPA Pressurant Line",
+  "3: N2O Run Valve",
+  "4: IPA Run Valve",
+  "5: N2O Vent Valve",
+  "6: IPA Vent Valve",
+  "7: Pneumatics Air Supply",
+  "8: Pneumatics Line Vent Valve",
+  "9: Purge Valve",
 ]
 
 const pinNormallyOpen = [
@@ -33,7 +33,7 @@ const pinNormallyOpen = [
 ]
 
 const sensorNames = [
-  "Sensata 1", "Sensata 2", "Sensata 3", "Sensata 4", "Sensata 5"
+  "N2O Inlet", "IPA Inlet", "N2O Tank", "IPA Tank", "N2 Inlet"
 ]
 
 function SubmitField({ buttonText = "Submit", submit = (_) => { }, children }) {
@@ -60,7 +60,7 @@ function useCSVLog() {
   });
   function fromLogString(logString) {
     let newLog = JSON.parse(JSON.stringify(log));
-    let list = logString.split(",");
+    let list = logString.split(",").slice(1);
     list.forEach((element, idx) => {
       if (idx < 9) {
         newLog.pinStates[idx] = parseInt(element);
@@ -82,14 +82,43 @@ function useCSVLog() {
   return [log, fromLogString, setPin];
 }
 
+function serverDataReducer(oldData, dataString) {
+  let newData;
+  if (dataString === "REC_ON") {
+    newData = {
+      ...oldData,
+      recording: true,
+    };
+  } else if (dataString === "REC_OFF") {
+    newData = {
+      ...oldData,
+      recording: false,
+      recfile: null,
+    };
+  } else {
+    const match = dataString.match(/REC_FILE=(.+)/);
+    if (match[1]) {
+      newData = {
+        ...oldData,
+        recfile: match[1],
+      };
+    }
+  }
+  return newData;
+}
+
 function App() {
   const WS_URL = "ws://localhost:8000";
+  const [serverData, handleServerData] = useReducer(serverDataReducer, {
+    recording: false, recfile: null
+  });
   const [log, setLog, setPin] = useCSVLog();
   const [err, setErr] = useState("");
   const [fallback, setFallback] = useState("")
   const processor = useProcessor({
     LOG: setLog,
     ERR: setErr,
+    SER: handleServerData,
   }, setFallback);
   //let [mostRecentMessage, setMostRecentMessage] = useState(null);
 
@@ -100,7 +129,7 @@ function App() {
     <div className="App">
       <header className='App__header'><h1>E&C Control Panel</h1><p>Server status: <span style={{ color: wsIsOpen ? "yellowgreen" : "red" }}>{wsIsOpen ? "CONNECTED" : "DISCONNECTED"}</span></p></header>
       <main className="App__main">
-        <ValveTable ws={ws} wsIsOpen={wsIsOpen} log={log} setPin={setPin} pinNames={pinNames} pinNormallyOpen={pinNormallyOpen}></ValveTable>
+        <ValveTable ws={ws} wsIsOpen={wsIsOpen} log={log} setPin={setPin} pinNames={pinNames} pinNormallyOpen={pinNormallyOpen} serverData={serverData}></ValveTable>
         <hr></hr>
         <div className={"App__sensors"}>
           {log.sensorData.map((el, idx) =>
@@ -115,7 +144,7 @@ function App() {
         <div style={{ display: "flex", justifyContent: "space-between", maxWidth: "35em", width: "90vw" }}>
           <SubmitField submit={ws ? (data) => ws.send(data) : (_) => { }} buttonText="Send">Send raw command</SubmitField>
           <div style={{ paddingLeft: "5em" }}>
-            <strong>ERR:</strong>
+            <strong>ERR <button className="linkbtn" onClick={() => { setErr(""); }}>(clear)</button>:</strong>
             <p>{err || "(none)"}</p>
             <strong>Unclassifiable message:</strong>
             <p>{fallback || "(none)"}</p>

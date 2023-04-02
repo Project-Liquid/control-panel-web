@@ -19,3 +19,20 @@ h1 {
 h2 {
   margin-top: 0.5em;
 }
+
+button.linkbtn {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+  font-size: 1em;
+  /*optional*/
+  /*font-family: arial, sans-serif;*/
+  /*input has OS specific font-family*/
+  color: #01376d;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+button.linkbtn:hover {
+  color: #000c17;
+}
